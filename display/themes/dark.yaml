@@ -1,0 +1,23 @@
+colors:
+  background:        [10,  12,  20 ]
+  clock_text:        [255, 255, 255]
+  date_text:         [200, 205, 235]
+  hijri_text:        [155, 175, 225]
+  table_header_bg:   [22,  27,  52 ]
+  table_header_text: [155, 175, 225]
+  row_bg_even:       [14,  16,  28 ]
+  row_bg_odd:        [18,  21,  37 ]
+  highlight_bg:      [32,  72,  160]
+  highlight_text:    [255, 255, 255]
+  prayer_name:       [210, 215, 255]
+  time_text:         [255, 255, 255]
+  iqamah_text:       [120, 220, 140]
+  no_iqamah:         [65,  68,  98 ]
+  countdown_bg:      [8,   10,  18 ]
+  countdown_label:   [165, 170, 205]
+  countdown_text:    [255, 212, 55 ]
+  divider:           [38,  43,  72 ]
+
+fonts:
+  family:   "dejavusans"
+  fallback: "freesans"

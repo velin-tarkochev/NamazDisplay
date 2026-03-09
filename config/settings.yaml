@@ -1,0 +1,46 @@
+location:
+  latitude: 40.8451   # Wind Gap, Pennsylvania
+  longitude: -75.3074
+  timezone: "America/New_York"
+  elevation: 299      # meters above sea level (Wind Gap ~980 ft)
+
+calculation:
+  method: "ISNA"      # ISNA | MWL | Egyptian | Karachi | UmmAlQura | Dubai | Qatar | Kuwait | MoonSighting | Singapore | Tehran
+  asr_madhab: "Standard"  # Standard (Shafi/Maliki/Hanbali) | Hanafi
+
+iqamah_rules:
+  # Rules are applied in order. Omit a prayer to use adhan time as iqamah.
+  # Available rule types:
+  #   offset_minutes:  iqamah = adhan + value minutes
+  #   round_up_to:     iqamah = adhan rounded up to next every_n_minutes boundary
+  #   fixed_time:      iqamah = fixed hour:minute regardless of adhan
+  fajr:
+    - type: offset_minutes
+      value: 20
+  dhuhr:
+    - type: round_up_to
+      every_n_minutes: 15
+  asr:
+    - type: offset_minutes
+      value: 15
+  maghrib:
+    - type: offset_minutes
+      value: 5
+  isha:
+    - type: round_up_to
+      every_n_minutes: 15
+
+display:
+  theme: "dark"        # name of file in display/themes/ (without .yaml)
+  font_scale: 1.0      # scale all fonts up/down
+  clock_format: 12     # 12 or 24
+  show_seconds: true
+  language: "en"
+
+hijri:
+  enabled: true
+  adjustment: 0        # ±1, ±2, ±3 days for local moon sighting
+
+web:
+  port: 8080
+  host: "0.0.0.0"     # listen on all interfaces (required for Tailscale access)
