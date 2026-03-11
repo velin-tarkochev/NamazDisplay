@@ -24,6 +24,8 @@ class DisplayState:
     hijri: tuple[int, int, int]
     next_prayer_name: str
     countdown: timedelta
+    interval_progress: float = 0.0  # 0.0–1.0: elapsed fraction of current inter-prayer interval
+    jumuah_time: Optional[datetime] = None  # non-None on Fridays when Jumu'ah is enabled
 
     @classmethod
     def from_app_state(cls, state: AppState) -> "DisplayState":
@@ -35,6 +37,8 @@ class DisplayState:
             hijri=snap.hijri,
             next_prayer_name=snap.next_prayer_name,
             countdown=snap.countdown,
+            interval_progress=snap.interval_progress,
+            jumuah_time=snap.jumuah_time,
         )
 
 

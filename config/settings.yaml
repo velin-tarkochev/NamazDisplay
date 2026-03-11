@@ -1,46 +1,56 @@
 location:
-  latitude: 40.8451   # Wind Gap, Pennsylvania
+  latitude: 40.8451
   longitude: -75.3074
-  timezone: "America/New_York"
-  elevation: 299      # meters above sea level (Wind Gap ~980 ft)
-
+  timezone: America/New_York
+  elevation: 299.0
 calculation:
-  method: "ISNA"      # ISNA | MWL | Egyptian | Karachi | UmmAlQura | Dubai | Qatar | Kuwait | MoonSighting | Singapore | Tehran
-  asr_madhab: "Standard"  # Standard (Shafi/Maliki/Hanbali) | Hanafi
-
+  method: ISNA
+  asr_madhab: Standard
 iqamah_rules:
-  # Rules are applied in order. Omit a prayer to use adhan time as iqamah.
-  # Available rule types:
-  #   offset_minutes:  iqamah = adhan + value minutes
-  #   round_up_to:     iqamah = adhan rounded up to next every_n_minutes boundary
-  #   fixed_time:      iqamah = fixed hour:minute regardless of adhan
   fajr:
-    - type: offset_minutes
-      value: 20
+  - type: round_up_to
+    value: null
+    every_n_minutes: 30
+    hour: null
+    minute: null
   dhuhr:
-    - type: round_up_to
-      every_n_minutes: 15
+  - type: round_up_to
+    value: null
+    every_n_minutes: 15
+    hour: null
+    minute: null
   asr:
-    - type: offset_minutes
-      value: 15
+  - type: round_up_to
+    value: null
+    every_n_minutes: 30
+    hour: null
+    minute: null
   maghrib:
-    - type: offset_minutes
-      value: 5
+  - type: offset_minutes
+    value: 10
+    every_n_minutes: null
+    hour: null
+    minute: null
   isha:
-    - type: round_up_to
-      every_n_minutes: 15
-
+  - type: round_up_to
+    value: null
+    every_n_minutes: 15
+    hour: null
+    minute: null
 display:
-  theme: "dark"        # name of file in display/themes/ (without .yaml)
-  font_scale: 1.0      # scale all fonts up/down
-  clock_format: 12     # 12 or 24
+  theme: dark
+  font_scale: 1.0
+  clock_format: 12
   show_seconds: true
-  language: "en"
-
+  language: en
+  layout: minimal
 hijri:
   enabled: true
-  adjustment: 0        # ±1, ±2, ±3 days for local moon sighting
-
+  adjustment: 0
+jumuah:
+  enabled: true
+  hour: 13
+  minute: 15
 web:
   port: 8080
-  host: "0.0.0.0"     # listen on all interfaces (required for Tailscale access)
+  host: 0.0.0.0

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prayer Display — Settings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+  <h1>Prayer Display</h1>
+  <p>Configure your mosque's prayer times display.</p>
+</header>
+
+<main>
+<form method="post" action="/save">
+
+  <!-- ── Location ─────────────────────────────────────────── -->
+  <section>
+    <h2>Location</h2>
+    <div class="field-row">
+      <div class="field">
+        <label for="lat">Latitude</label>
+        <input type="number" id="lat" name="location.latitude"
+               step="0.0001" min="-90" max="90"
+               value="{{ config.location.latitude }}" required>
+      </div>
+      <div class="field">
+        <label for="lng">Longitude</label>
+        <input type="number" id="lng" name="location.longitude"
+               step="0.0001" min="-180" max="180"
+               value="{{ config.location.longitude }}" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="tz">Timezone</label>
+      <input type="text" id="tz" name="location.timezone"
+             value="{{ config.location.timezone }}"
+             placeholder="e.g. America/New_York" required>
+    </div>
+    <div class="field narrow">
+      <label for="elev">Elevation (m)</label>
+      <input type="number" id="elev" name="location.elevation"
+             step="1" min="0" value="{{ config.location.elevation | int }}">
+    </div>
+  </section>
+
+  <!-- ── Calculation ───────────────────────────────────────── -->
+  <section>
+    <h2>Calculation</h2>
+    <div class="field">
+      <label for="method">Method</label>
+      <select id="method" name="calculation.method">
+        {% set methods = [
+          ('ISNA',         'ISNA — Islamic Society of North America'),
+          ('MWL',          'MWL — Muslim World League'),
+          ('Egyptian',     'Egyptian General Authority of Survey'),
+          ('Karachi',      'Karachi — University of Islamic Sciences'),
+          ('UmmAlQura',    'Umm Al-Qura — Saudi Arabia'),
+          ('Dubai',        'Dubai'),
+          ('Qatar',        'Qatar'),
+          ('Kuwait',       'Kuwait'),
+          ('MoonSighting', 'Moon Sighting Committee'),
+          ('Singapore',    'Singapore'),
+          ('Tehran',       'Tehran — Institute of Geophysics'),
+        ] %}
+        {% for val, label in methods %}
+        <option value="{{ val }}"{% if config.calculation.method == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="madhab">Asr Madhab</label>
+      <select id="madhab" name="calculation.asr_madhab">
+        <option value="Standard"{% if config.calculation.asr_madhab == 'Standard' %} selected{% endif %}>Standard — Shafi / Maliki / Hanbali</option>
+        <option value="Hanafi"{% if config.calculation.asr_madhab == 'Hanafi' %} selected{% endif %}>Hanafi</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ── Iqamah Times ──────────────────────────────────────── -->
+  <section>
+    <h2>Iqamah Times</h2>
+    <p class="hint">Set when the congregation begins relative to each adhan.</p>
+
+    {% for prayer in ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] %}
+    {% set rules = config.iqamah_rules | attr(prayer) %}
+    {% set rule  = rules[0] if rules else none %}
+    {% set rt    = rule.type if rule else 'none' %}
+
+    <div class="prayer-card">
+      <div class="prayer-name">{{ prayer | capitalize }}</div>
+
+      <div class="field">
+        <label for="sel_{{ prayer }}">Rule</label>
+        <select id="sel_{{ prayer }}" onchange="setIqamah('{{ prayer }}', this.value)">
+          <option value="none"{% if rt == 'none' %} selected{% endif %}>Same as Adhan</option>
+          <option value="offset_minutes"{% if rt == 'offset_minutes' %} selected{% endif %}>Offset — X minutes after adhan</option>
+          <option value="round_up_to"{% if rt == 'round_up_to' %} selected{% endif %}>Round up to nearest N minutes</option>
+          <option value="fixed_time"{% if rt == 'fixed_time' %} selected{% endif %}>Fixed time</option>
+        </select>
+      </div>
+
+      {# Type hidden — disabled (unsent) when 'none' is selected #}
+      <input type="hidden"
+             id="type_{{ prayer }}"
+             name="iqamah_rules.{{ prayer }}.0.type"
+             value="{{ rt }}"
+             {% if rt == 'none' %}disabled{% endif %}>
+
+      {# Offset params #}
+      <div class="iq-params" id="params_offset_minutes_{{ prayer }}"
+           style="display:{% if rt == 'offset_minutes' %}flex{% else %}none{% endif %}">
+        <input type="number"
+               id="val_{{ prayer }}"
+               name="iqamah_rules.{{ prayer }}.0.value"
+               min="0" max="120"
+               value="{{ rule.value if rule and rule.value is not none else 15 }}"
+               {% if rt != 'offset_minutes' %}disabled{% endif %}>
+        <span class="unit">minutes after adhan</span>
+      </div>
+
+      {# Round-up params #}
+      <div class="iq-params" id="params_round_up_to_{{ prayer }}"
+           style="display:{% if rt == 'round_up_to' %}flex{% else %}none{% endif %}">
+        <span class="unit">Round up every</span>
+        <input type="number"
+               id="n_{{ prayer }}"
+               name="iqamah_rules.{{ prayer }}.0.every_n_minutes"
+               min="1" max="60"
+               value="{{ rule.every_n_minutes if rule and rule.every_n_minutes is not none else 15 }}"
+               {% if rt != 'round_up_to' %}disabled{% endif %}>
+        <span class="unit">minutes</span>
+      </div>
+
+      {# Fixed-time params #}
+      <div class="iq-params" id="params_fixed_time_{{ prayer }}"
+           style="display:{% if rt == 'fixed_time' %}flex{% else %}none{% endif %}">
+        <input type="time"
+               id="time_{{ prayer }}"
+               value="{{ '%02d:%02d' % (rule.hour, rule.minute) if rule and rule.type == 'fixed_time' and rule.hour is not none else '12:00' }}"
+               oninput="splitTime('{{ prayer }}', this.value)"
+               {% if rt != 'fixed_time' %}disabled{% endif %}>
+        <input type="hidden" id="hour_{{ prayer }}"
+               name="iqamah_rules.{{ prayer }}.0.hour"
+               value="{{ rule.hour if rule and rule.type == 'fixed_time' and rule.hour is not none else 12 }}"
+               {% if rt != 'fixed_time' %}disabled{% endif %}>
+        <input type="hidden" id="minute_{{ prayer }}"
+               name="iqamah_rules.{{ prayer }}.0.minute"
+               value="{{ rule.minute if rule and rule.type == 'fixed_time' and rule.minute is not none else 0 }}"
+               {% if rt != 'fixed_time' %}disabled{% endif %}>
+      </div>
+
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- ── Display ───────────────────────────────────────────── -->
+  <section>
+    <h2>Display</h2>
+    <div class="field">
+      <label for="layout">Layout</label>
+      <select id="layout" name="display.layout">
+        <option value="standard"{% if config.display.layout == 'standard' %} selected{% endif %}>Standard — Prayer | Adhan | Iqamah rows</option>
+        <option value="minimal"{% if config.display.layout == 'minimal' %} selected{% endif %}>Minimal — bold typography, no grid lines</option>
+        <option value="transposed"{% if config.display.layout == 'transposed' %} selected{% endif %}>Transposed — prayers as columns</option>
+        <option value="split"{% if config.display.layout == 'split' %} selected{% endif %}>Split panel — clock left, table right</option>
+        <option value="cards"{% if config.display.layout == 'cards' %} selected{% endif %}>Cards — 5 fard prayers as large blocks</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="theme">Theme</label>
+      <select id="theme" name="display.theme">
+        <option value="dark"{% if config.display.theme == 'dark' %} selected{% endif %}>Dark</option>
+        <option value="light"{% if config.display.theme == 'light' %} selected{% endif %}>Light</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="clock_format">Clock Format</label>
+      <select id="clock_format" name="display.clock_format">
+        <option value="12"{% if config.display.clock_format == 12 %} selected{% endif %}>12-hour (AM / PM)</option>
+        <option value="24"{% if config.display.clock_format == 24 %} selected{% endif %}>24-hour</option>
+      </select>
+    </div>
+    <div class="field narrow">
+      <label for="font_scale">Font Scale</label>
+      <input type="number" id="font_scale" name="display.font_scale"
+             step="0.1" min="0.5" max="2.0" value="{{ config.display.font_scale }}">
+    </div>
+    <div class="field">
+      <label for="show_seconds">Show Seconds on Clock</label>
+      <select id="show_seconds" name="display.show_seconds">
+        <option value="true"{% if config.display.show_seconds %} selected{% endif %}>Yes</option>
+        <option value="false"{% if not config.display.show_seconds %} selected{% endif %}>No</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- ── Jumu'ah ──────────────────────────────────────────── -->
+  <section>
+    <h2>Jumu'ah (Friday Prayer)</h2>
+    <p class="hint">On Fridays, the Dhuhr row is replaced with Jumu'ah at the configured time.</p>
+    <div class="field">
+      <label for="jumuah_enabled">Show Jumu'ah</label>
+      <select id="jumuah_enabled" name="jumuah.enabled">
+        <option value="true"{% if config.jumuah.enabled %} selected{% endif %}>Yes</option>
+        <option value="false"{% if not config.jumuah.enabled %} selected{% endif %}>No</option>
+      </select>
+    </div>
+    <div class="field narrow">
+      <label for="jumuah_time">Jumu'ah Time</label>
+      <input type="time" id="jumuah_time"
+             value="{{ '%02d:%02d' % (config.jumuah.hour, config.jumuah.minute) }}"
+             oninput="splitJumuah(this.value)">
+      <input type="hidden" id="jumuah_hour"   name="jumuah.hour"   value="{{ config.jumuah.hour }}">
+      <input type="hidden" id="jumuah_minute" name="jumuah.minute" value="{{ config.jumuah.minute }}">
+    </div>
+  </section>
+
+  <!-- ── Hijri Date ────────────────────────────────────────── -->
+  <section>
+    <h2>Hijri Date</h2>
+    <div class="field">
+      <label for="hijri_enabled">Show Hijri Date</label>
+      <select id="hijri_enabled" name="hijri.enabled">
+        <option value="true"{% if config.hijri.enabled %} selected{% endif %}>Yes</option>
+        <option value="false"{% if not config.hijri.enabled %} selected{% endif %}>No</option>
+      </select>
+    </div>
+    <div class="field narrow">
+      <label for="hijri_adj">Adjustment (days)</label>
+      <input type="number" id="hijri_adj" name="hijri.adjustment"
+             min="-3" max="3" value="{{ config.hijri.adjustment }}">
+      <p class="hint">±1–3 days for local moon sighting</p>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="submit" class="btn-save">Save Settings</button>
+  </div>
+
+</form>
+</main>
+
+<script>
+  var RULE_TYPES = ['offset_minutes', 'round_up_to', 'fixed_time'];
+
+  function setIqamah(prayer, type) {
+    var typeEl = document.getElementById('type_' + prayer);
+
+    // Disable + hide all param groups for this prayer
+    RULE_TYPES.forEach(function(t) {
+      var div = document.getElementById('params_' + t + '_' + prayer);
+      if (!div) return;
+      div.style.display = 'none';
+      div.querySelectorAll('input').forEach(function(i) { i.disabled = true; });
+    });
+
+    if (type === 'none') {
+      typeEl.disabled = true;
+    } else {
+      typeEl.disabled = false;
+      typeEl.value = type;
+      var activeDiv = document.getElementById('params_' + type + '_' + prayer);
+      if (activeDiv) {
+        activeDiv.style.display = 'flex';
+        activeDiv.querySelectorAll('input').forEach(function(i) { i.disabled = false; });
+      }
+    }
+  }
+
+  function splitTime(prayer, val) {
+    var parts = val.split(':');
+    document.getElementById('hour_' + prayer).value = parseInt(parts[0], 10);
+    document.getElementById('minute_' + prayer).value = parseInt(parts[1], 10);
+  }
+
+  function splitJumuah(val) {
+    var parts = val.split(':');
+    document.getElementById('jumuah_hour').value = parseInt(parts[0], 10);
+    document.getElementById('jumuah_minute').value = parseInt(parts[1], 10);
+  }
+</script>
+
+</body>
+</html>

@@ -85,23 +85,50 @@ def create_app(loader: ConfigLoader, state: AppState) -> Flask:
 # ---------------------------------------------------------------------------
 
 def _form_to_dict(form) -> dict:
-    """Reconstruct a nested dict from flat dot-notation form fields.
+    """Reconstruct a nested dict/list structure from flat dot-notation form fields.
 
-    e.g. ``location.latitude=51.5`` → ``{"location": {"latitude": 51.5}}``
+    Numeric path components are treated as list indices so that iqamah rule
+    fields like ``iqamah_rules.fajr.0.type`` produce the correct nested list.
+
+    e.g. ``location.latitude=51.5``          → ``{"location": {"latitude": 51.5}}``
+         ``iqamah_rules.fajr.0.type=offset`` → ``{"iqamah_rules": {"fajr": [{"type": "offset"}]}}``
     """
     result: dict = {}
     for key, value in form.items():
-        parts = key.split(".")
-        node = result
-        for part in parts[:-1]:
-            node = node.setdefault(part, {})
-        # Attempt numeric coercion; fall back to string
-        leaf = parts[-1]
-        try:
-            node[leaf] = int(value)
-        except ValueError:
-            try:
-                node[leaf] = float(value)
-            except ValueError:
-                node[leaf] = value
+        _deep_set(result, key.split("."), _coerce(value))
     return result
+
+
+def _coerce(value: str):
+    """Coerce a form string value to int, float, bool, or str."""
+    if value.lower() in ("true", "yes", "on"):
+        return True
+    if value.lower() in ("false", "no", "off"):
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            return value
+
+
+def _deep_set(node: dict, parts: list[str], value) -> None:
+    """Recursively navigate/build nested dicts and lists using path parts."""
+    key = parts[0]
+    if len(parts) == 1:
+        node[key] = value
+        return
+    next_key = parts[1]
+    if next_key.isdigit():
+        lst = node.setdefault(key, [])
+        idx = int(next_key)
+        while len(lst) <= idx:
+            lst.append({})
+        if len(parts) == 2:
+            lst[idx] = value
+        else:
+            _deep_set(lst[idx], parts[2:], value)
+    else:
+        _deep_set(node.setdefault(key, {}), parts[1:], value)

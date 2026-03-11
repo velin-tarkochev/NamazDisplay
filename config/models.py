@@ -50,11 +50,18 @@ class DisplayConfig(BaseModel):
     clock_format: Literal[12, 24] = 24
     show_seconds: bool = True
     language: str = "en"
+    layout: str = "standard"  # standard | minimal | transposed | split | cards
 
 
 class HijriConfig(BaseModel):
     enabled: bool = True
     adjustment: int = Field(default=0, ge=-3, le=3)
+
+
+class JumuahConfig(BaseModel):
+    enabled: bool = True
+    hour: int = Field(default=13, ge=0, le=23)    # 1 PM default
+    minute: int = Field(default=15, ge=0, le=59)  # :15 default
 
 
 class WebConfig(BaseModel):
@@ -68,4 +75,5 @@ class AppConfig(BaseModel):
     iqamah_rules: IqamahConfig = Field(default_factory=IqamahConfig)
     display: DisplayConfig = Field(default_factory=DisplayConfig)
     hijri: HijriConfig = Field(default_factory=HijriConfig)
+    jumuah: JumuahConfig = Field(default_factory=JumuahConfig)
     web: WebConfig = Field(default_factory=WebConfig)

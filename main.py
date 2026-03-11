@@ -48,6 +48,10 @@ def main() -> None:
     state = AppState()
     scheduler = _build_scheduler(loader.config, state)
 
+    # Mutable ref so the hot-reload callback can reach the display object,
+    # which is created later (after the callback is registered).
+    _display_ref: list = [None]
+
     def on_config_change(new_config: AppConfig) -> None:
         logger.info("Config changed — updating scheduler components")
         from prayer.calculator import AdhanCalculator
@@ -56,6 +60,10 @@ def main() -> None:
         calculator = AdhanCalculator(new_config.calculation.method, new_config.calculation.asr_madhab)
         iqamah_engine = build_iqamah_engine(new_config.iqamah_rules)
         scheduler.update_components(calculator, iqamah_engine, new_config)
+
+        d = _display_ref[0]
+        if d is not None:
+            d.update_config(new_config.display)
 
     loader.on_change(on_config_change)
     scheduler.start()
@@ -91,6 +99,7 @@ def main() -> None:
         from display.pygame_display import PyGameDisplay
 
         display = PyGameDisplay(loader.config.display, windowed=args.windowed)
+        _display_ref[0] = display
         logger.info("Starting display (windowed=%s)", args.windowed)
         display.run(state)  # blocks until window is closed or ESC pressed
 

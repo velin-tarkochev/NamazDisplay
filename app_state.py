@@ -23,6 +23,8 @@ class AppState:
     next_prayer_adhan: Optional[datetime] = None
     next_prayer_iqamah: Optional[datetime] = None
     countdown: timedelta = field(default_factory=timedelta)
+    interval_progress: float = 0.0  # 0.0–1.0: elapsed fraction of current inter-prayer interval
+    jumuah_time: Optional[datetime] = None  # set on Fridays when Jumu'ah is enabled
 
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False, compare=False)
 
@@ -38,6 +40,8 @@ class AppState:
                 next_prayer_adhan=self.next_prayer_adhan,
                 next_prayer_iqamah=self.next_prayer_iqamah,
                 countdown=self.countdown,
+                interval_progress=self.interval_progress,
+                jumuah_time=self.jumuah_time,
             )
 
     def write(self, **kwargs) -> None:

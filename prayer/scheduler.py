@@ -116,11 +116,23 @@ class Scheduler:
             return
 
         tz = zoneinfo.ZoneInfo(self._config.location.timezone)
+
+        # Jumu'ah: fixed-time Friday congregation replacing Dhuhr in the countdown
+        jumuah_cfg = self._config.jumuah
+        jumuah_time: Optional[datetime] = None
+        if jumuah_cfg.enabled and now.weekday() == 4:  # 4 = Friday
+            jumuah_time = now.replace(
+                hour=jumuah_cfg.hour, minute=jumuah_cfg.minute, second=0, microsecond=0
+            )
+
         upcoming: list[tuple[str, datetime]] = []
         for name in COUNTDOWN_PRAYERS:
             adhan_time = getattr(pt, name)
             if adhan_time.tzinfo is None:
                 adhan_time = adhan_time.replace(tzinfo=tz)
+            # On Fridays use Jumu'ah time instead of calculated Dhuhr for countdown
+            if name == "dhuhr" and jumuah_time is not None:
+                adhan_time = jumuah_time
             if adhan_time > now:
                 upcoming.append((name, adhan_time))
 
@@ -133,12 +145,33 @@ class Scheduler:
 
         next_iqamah = snap.iqamah_times.get(next_name)
 
+        # Compute progress through the current inter-prayer interval (0.0 → 1.0)
+        past = [
+            getattr(pt, n)
+            for n in COUNTDOWN_PRAYERS
+            if getattr(pt, n) <= now
+        ]
+        if past:
+            interval_start = max(past)  # most recent past prayer
+        else:
+            # Before today's Fajr — approximate start as yesterday's Isha
+            interval_start = getattr(pt, "isha") - timedelta(days=1)
+        if interval_start.tzinfo is None:
+            interval_start = interval_start.replace(tzinfo=tz)
+        total_secs = (next_adhan - interval_start).total_seconds()
+        elapsed_secs = (now - interval_start).total_seconds()
+        interval_progress = (
+            max(0.0, min(1.0, elapsed_secs / total_secs)) if total_secs > 0 else 0.0
+        )
+
         self._state.write(
             current_time=now,
             next_prayer_name=next_name,
             next_prayer_adhan=next_adhan,
             next_prayer_iqamah=next_iqamah,
             countdown=next_adhan - now,
+            interval_progress=interval_progress,
+            jumuah_time=jumuah_time,
         )
 
     def _get_tomorrow_fajr(self, tz: zoneinfo.ZoneInfo) -> datetime:
