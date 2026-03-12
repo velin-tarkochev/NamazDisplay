@@ -26,6 +26,7 @@ class DisplayState:
     countdown: timedelta
     interval_progress: float = 0.0  # 0.0–1.0: elapsed fraction of current inter-prayer interval
     jumuah_time: Optional[datetime] = None  # non-None on Fridays when Jumu'ah is enabled
+    next_prayer_adhan: Optional[datetime] = None  # for live countdown computation in the display
 
     @classmethod
     def from_app_state(cls, state: AppState) -> "DisplayState":
@@ -39,6 +40,7 @@ class DisplayState:
             countdown=snap.countdown,
             interval_progress=snap.interval_progress,
             jumuah_time=snap.jumuah_time,
+            next_prayer_adhan=snap.next_prayer_adhan,
         )
 
 

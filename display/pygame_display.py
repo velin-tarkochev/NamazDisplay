@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 THEMES_DIR = Path(__file__).parent / "themes"
-FPS = 2  # 2 frames/sec is smooth for a clock display and CPU-friendly
+FPS = 10  # 10 frames/sec keeps the countdown smooth without heavy CPU use
 
 PRAYER_ORDER = ("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha", "tahajjud")
 FARD_ORDER   = ("fajr", "dhuhr", "asr", "maghrib", "isha")
@@ -345,9 +345,21 @@ class PyGameDisplay(DisplayEngine):
         footer_y = int(H * _FOOTER_TOP)
         pygame.draw.rect(scr, _c(t, "countdown_bg"), (0, footer_y, W, H - footer_y))
 
-        # Progress bar — thin strip at the very top of the footer
-        bar_h = max(5, int(H * 0.011))
-        bar_w = int(W * state.interval_progress)
+        # Compute remaining fraction + live countdown from actual clock time
+        if state.next_prayer_adhan is not None and state.interval_progress < 1.0:
+            now_live = datetime.now(tz=state.next_prayer_adhan.tzinfo)
+            remaining_secs = max(0.0, (state.next_prayer_adhan - now_live).total_seconds())
+            live_cd = timedelta(seconds=remaining_secs)
+        else:
+            remaining_secs = max(0.0, state.countdown.total_seconds())
+            live_cd = state.countdown
+        # Remaining fraction: 1.0 when interval just started, 0.0 at prayer time
+        remaining_frac = 1.0 - state.interval_progress
+
+        # Progress bar — thick strip draining left-to-right toward zero
+        bar_h = max(16, int(H * 0.040))
+        bar_w = int(W * remaining_frac)
+        pygame.draw.rect(scr, _c(t, "row_bg_odd"), (0, footer_y, W, bar_h))
         if bar_w > 0:
             pygame.draw.rect(scr, _c(t, "highlight_bg"), (0, footer_y, bar_w, bar_h))
 
@@ -356,8 +368,8 @@ class PyGameDisplay(DisplayEngine):
                      f"Next: {prayer_label}",
                      _c(t, "countdown_label"), W // 2, int(H * _FOOTER_LABEL_CY))
 
-        pct    = int(state.interval_progress * 100)
-        cd_str = f"{_fmt_countdown(state.countdown)}  ·  {pct}%"
+        pct    = int(remaining_frac * 100)
+        cd_str = f"{_fmt_countdown(live_cd)}  ·  {pct}%"
         _blit_center(scr, f.footer_time, cd_str, _c(t, "countdown_text"), W // 2, int(H * _FOOTER_TIME_CY))
 
     # ------------------------------------------------------------------
@@ -607,24 +619,34 @@ class PyGameDisplay(DisplayEngine):
                          (int(split_x * 0.92), int(H * 0.50)), 1)
 
         if state.next_prayer_name:
+            # Live countdown and remaining fraction (same logic as footer)
+            if state.next_prayer_adhan is not None and state.interval_progress < 1.0:
+                now_live = datetime.now(tz=state.next_prayer_adhan.tzinfo)
+                remaining_secs = max(0.0, (state.next_prayer_adhan - now_live).total_seconds())
+                live_cd = timedelta(seconds=remaining_secs)
+            else:
+                remaining_secs = max(0.0, state.countdown.total_seconds())
+                live_cd = state.countdown
+            remaining_frac = 1.0 - state.interval_progress
+
             prayer_label = _label_for(state.next_prayer_name, state)
             _blit_center(scr, f.split_label, "Next Prayer",
                          _c(t, "countdown_label"), split_x // 2, int(H * 0.57))
             _blit_center(scr, f.split_next, prayer_label,
                          _c(t, "highlight_text"), split_x // 2, int(H * 0.65))
-            _blit_center(scr, f.split_cd, _fmt_countdown(state.countdown),
+            _blit_center(scr, f.split_cd, _fmt_countdown(live_cd),
                          _c(t, "countdown_text"), split_x // 2, int(H * 0.75))
 
-            # Progress bar inside left panel
-            pct = int(state.interval_progress * 100)
+            # Progress bar inside left panel (drains left-to-right)
+            pct = int(remaining_frac * 100)
             _blit_center(scr, f.split_label, f"{pct}%",
                          _c(t, "countdown_label"), split_x // 2, int(H * 0.85))
             bar_y        = int(H * 0.89)
-            bar_h        = max(5, int(H * 0.012))
+            bar_h        = max(16, int(H * 0.040))
             bar_total_w  = int(split_x * 0.78)
             bar_x        = (split_x - bar_total_w) // 2
             pygame.draw.rect(scr, _c(t, "row_bg_odd"), (bar_x, bar_y, bar_total_w, bar_h))
-            filled = int(bar_total_w * state.interval_progress)
+            filled = int(bar_total_w * remaining_frac)
             if filled > 0:
                 pygame.draw.rect(scr, _c(t, "highlight_bg"), (bar_x, bar_y, filled, bar_h))
 

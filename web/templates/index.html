@@ -124,14 +124,21 @@
       {# Round-up params #}
       <div class="iq-params" id="params_round_up_to_{{ prayer }}"
            style="display:{% if rt == 'round_up_to' %}flex{% else %}none{% endif %}">
-        <span class="unit">Round up every</span>
+        <span class="unit">Every</span>
         <input type="number"
                id="n_{{ prayer }}"
                name="iqamah_rules.{{ prayer }}.0.every_n_minutes"
                min="1" max="60"
                value="{{ rule.every_n_minutes if rule and rule.every_n_minutes is not none else 15 }}"
                {% if rt != 'round_up_to' %}disabled{% endif %}>
-        <span class="unit">minutes</span>
+        <span class="unit">min, min gap</span>
+        <input type="number"
+               id="gap_{{ prayer }}"
+               name="iqamah_rules.{{ prayer }}.0.min_gap_minutes"
+               min="0" max="60"
+               value="{{ rule.min_gap_minutes if rule and rule.min_gap_minutes is not none else 10 }}"
+               {% if rt != 'round_up_to' %}disabled{% endif %}>
+        <span class="unit">min</span>
       </div>
 
       {# Fixed-time params #}

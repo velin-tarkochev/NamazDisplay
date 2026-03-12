@@ -1,2 +1,0 @@
-from adhanpy.calculation.CalculationMethod import CalculationMethod
-from adhanpy.calculation.CalculationParameters import CalculationParameters

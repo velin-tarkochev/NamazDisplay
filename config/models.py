@@ -21,6 +21,7 @@ class IqamahRuleConfig(BaseModel):
     value: Optional[int] = None
     # round_up_to
     every_n_minutes: Optional[int] = None
+    min_gap_minutes: Optional[int] = None  # minimum gap between adhan and iqamah (default 10)
     # fixed_time
     hour: Optional[int] = None
     minute: Optional[int] = None

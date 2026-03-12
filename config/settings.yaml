@@ -11,18 +11,21 @@ iqamah_rules:
   - type: round_up_to
     value: null
     every_n_minutes: 30
+    min_gap_minutes: 10
     hour: null
     minute: null
   dhuhr:
   - type: round_up_to
     value: null
     every_n_minutes: 15
+    min_gap_minutes: 10
     hour: null
     minute: null
   asr:
   - type: round_up_to
     value: null
     every_n_minutes: 30
+    min_gap_minutes: 10
     hour: null
     minute: null
   maghrib:
@@ -35,6 +38,7 @@ iqamah_rules:
   - type: round_up_to
     value: null
     every_n_minutes: 15
+    min_gap_minutes: 10
     hour: null
     minute: null
 display:
