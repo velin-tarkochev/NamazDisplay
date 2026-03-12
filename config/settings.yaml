@@ -32,6 +32,7 @@ iqamah_rules:
   - type: offset_minutes
     value: 10
     every_n_minutes: null
+    min_gap_minutes: null
     hour: null
     minute: null
   isha:
@@ -47,7 +48,7 @@ display:
   clock_format: 12
   show_seconds: true
   language: en
-  layout: minimal
+  layout: ambient
 hijri:
   enabled: true
   adjustment: 0

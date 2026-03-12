@@ -3,7 +3,8 @@
     "allow": [
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(powershell -Command:*)",
-      "Bash(ipconfig:*)"
+      "Bash(ipconfig:*)",
+      "Bash(python:*)"
     ]
   }
 }

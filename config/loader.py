@@ -43,15 +43,21 @@ class ConfigLoader:
         self._callbacks.append(callback)
 
     def save(self, config: AppConfig) -> None:
-        """Persist *config* to disk and update the in-memory copy.
+        """Persist *config* to disk, update in-memory copy, and notify callbacks.
 
-        The watchdog will fire after the write, but ``_on_file_changed``
-        checks whether the content actually differs before re-notifying
-        callbacks, so there's no double-callback.
+        Callbacks are called directly here because the watchdog fires after the
+        write but skips notification (``_on_file_changed`` sees the in-memory
+        config already matches the file, so it returns early).
         """
         with self._lock:
             self._write(config)
             self._config = config
+
+        for cb in self._callbacks:
+            try:
+                cb(config)
+            except Exception:
+                logger.exception("Error in config change callback")
 
     def stop(self) -> None:
         self._observer.stop()

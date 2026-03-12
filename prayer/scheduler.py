@@ -15,7 +15,7 @@ from typing import Optional
 
 from app_state import AppState
 from config.models import AppConfig
-from prayer.calculator import COUNTDOWN_PRAYERS, Location, PrayerCalculator, PrayerTimes
+from prayer.calculator import COUNTDOWN_PRAYERS, IQAMAH_PRAYERS, Location, PrayerCalculator, PrayerTimes
 from prayer.iqamah import IqamahEngine
 
 logger = logging.getLogger(__name__)
@@ -164,6 +164,30 @@ class Scheduler:
             max(0.0, min(1.0, elapsed_secs / total_secs)) if total_secs > 0 else 0.0
         )
 
+        # Detect if now is between a prayer's adhan and its iqamah
+        current_iqamah: Optional[datetime] = None
+        current_iqamah_name: str = ""
+        current_iqamah_progress: float = 0.0
+        for name in IQAMAH_PRAYERS:
+            adhan_dt = getattr(pt, name)
+            if adhan_dt.tzinfo is None:
+                adhan_dt = adhan_dt.replace(tzinfo=tz)
+            if name == "dhuhr" and jumuah_time is not None:
+                adhan_dt = jumuah_time
+            iq_dt = snap.iqamah_times.get(name)
+            if iq_dt is not None:
+                if iq_dt.tzinfo is None:
+                    iq_dt = iq_dt.replace(tzinfo=tz)
+                if adhan_dt <= now < iq_dt:
+                    current_iqamah_name = name
+                    current_iqamah = iq_dt
+                    span = (iq_dt - adhan_dt).total_seconds()
+                    elapsed_iq = (now - adhan_dt).total_seconds()
+                    current_iqamah_progress = (
+                        max(0.0, min(1.0, elapsed_iq / span)) if span > 0 else 0.0
+                    )
+                    break
+
         self._state.write(
             current_time=now,
             next_prayer_name=next_name,
@@ -172,6 +196,9 @@ class Scheduler:
             countdown=next_adhan - now,
             interval_progress=interval_progress,
             jumuah_time=jumuah_time,
+            current_iqamah=current_iqamah,
+            current_iqamah_name=current_iqamah_name,
+            current_iqamah_progress=current_iqamah_progress,
         )
 
     def _get_tomorrow_fajr(self, tz: zoneinfo.ZoneInfo) -> datetime:

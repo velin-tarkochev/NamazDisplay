@@ -173,7 +173,11 @@
         <option value="minimal"{% if config.display.layout == 'minimal' %} selected{% endif %}>Minimal — bold typography, no grid lines</option>
         <option value="transposed"{% if config.display.layout == 'transposed' %} selected{% endif %}>Transposed — prayers as columns</option>
         <option value="split"{% if config.display.layout == 'split' %} selected{% endif %}>Split panel — clock left, table right</option>
-        <option value="cards"{% if config.display.layout == 'cards' %} selected{% endif %}>Cards — 5 fard prayers as large blocks</option>
+        <option value="cards"{% if config.display.layout == 'cards' %} selected{% endif %}>Cards — 6 prayers as large rounded blocks</option>
+        <option value="timeline"{% if config.display.layout == 'timeline' %} selected{% endif %}>Timeline — prayers on a horizontal day ruler</option>
+        <option value="ambient"{% if config.display.layout == 'ambient' %} selected{% endif %}>Ambient — giant clock, next prayer info</option>
+        <option value="sunclock"{% if config.display.layout == 'sunclock' %} selected{% endif %}>Sun Clock — circular 24-hour day/night display</option>
+        <option value="terminal"{% if config.display.layout == 'terminal' %} selected{% endif %}>Terminal — green phosphor hacker display</option>
       </select>
     </div>
     <div class="field">

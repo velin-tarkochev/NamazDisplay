@@ -27,6 +27,9 @@ class DisplayState:
     interval_progress: float = 0.0  # 0.0–1.0: elapsed fraction of current inter-prayer interval
     jumuah_time: Optional[datetime] = None  # non-None on Fridays when Jumu'ah is enabled
     next_prayer_adhan: Optional[datetime] = None  # for live countdown computation in the display
+    current_iqamah: Optional[datetime] = None       # set while between adhan and iqamah
+    current_iqamah_name: str = ""
+    current_iqamah_progress: float = 0.0            # 0.0 at adhan, 1.0 at iqamah
 
     @classmethod
     def from_app_state(cls, state: AppState) -> "DisplayState":
@@ -41,6 +44,9 @@ class DisplayState:
             interval_progress=snap.interval_progress,
             jumuah_time=snap.jumuah_time,
             next_prayer_adhan=snap.next_prayer_adhan,
+            current_iqamah=snap.current_iqamah,
+            current_iqamah_name=snap.current_iqamah_name,
+            current_iqamah_progress=snap.current_iqamah_progress,
         )
 
 
